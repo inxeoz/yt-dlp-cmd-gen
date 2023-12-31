@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>yt-dlp Audio/Video Options Generator</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #222;
+            color: #fff;
+        }
+
+        #container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #form-container {
+            background-color: #333;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-label {
+            color: #ccc;
+        }
+
+        input[type="text"],
+        input[type="checkbox"],
+        select {
+            margin-bottom: 10px;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            background-color: #444;
+            color: #fff;
+        }
+
+        input[type="checkbox"]:checked + label::before {
+            content: '✓ ';
+            color: #33ff33;
+        }
+
+        input[type="checkbox"] + label::before {
+            content: '◻ ';
+            color: #ccc;
+        }
+
+        input[type="checkbox"] + label {
+            color: #ccc;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #009688;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #00bfa5;
+        }
+
+        #sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #f2f2f2;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        #generatedLink {
+            color: #33ff33;
+            font-size: 14px;
+            font-weight: bold;
+            word-break: break-all;
+        }
+
+        #copyMessage {
+            color: #009688;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="form-container">
+            <h1>yt-dlp Audio/Video Options Generator</h1>
+            <form id="ytDlpAVForm">
+                <label class="input-label" for="videoLink">Enter YouTube Video Link:</label><br>
+                <input type="text" id="videoLink" name="videoLink" required><br><br>
+
+                <div class="options-container">
+                    <div class="audio-options">
+                        <h2>Audio Options:</h2>
+                        <input type="checkbox" id="audioOnly" name="audioOnly">
+                        <label for="audioOnly">Download Audio Only</label><br>
+
+                        <label class="input-label" for="audioBitrate">Select Audio Bitrate:</label><br>
+                        <select id="audioBitrate" name="audioBitrate">
+                            <option value="128">128 Kbps</option>
+                            <option value="256">256 Kbps</option>
+                            <option value="320">320 Kbps</option>
+                        </select><br><br>
+
+                        <div class="horizontal-options">
+                            <label class="input-label" for="audioFormat">Select Audio Format(s):</label><br>
+                            <div>
+                                <input type="checkbox" id="m4a" name="audioFormat" value="m4a">
+                                <label for="m4a">M4A</label><br>
+
+                                <input type="checkbox" id="mp3" name="audioFormat" value="mp3">
+                                <label for="mp3">MP3</label><br>
+                            </div>
+                        </div>
+
+                        <label class="input-label" for="customAudioFormat">Custom Audio Format(s) (comma-separated):</label><br>
+                        <input type="text" id="customAudioFormat" name="customAudioFormat" placeholder="Enter Custom Audio Formats"><br><br>
+                    </div>
+
+                    <div class="video-options">
+                        <h2>Video Options:</h2>
+                        <label class="input-label" for="videoBitrate">Select Video Resolution:</label><br>
+                        <select id="videoBitrate" name="videoBitrate">
+                            
+                            <option value="1080p">1080p</option>
+                            <option value="720p">720p</option>
+                            <option value="480p">480p</option>
+                            <option value="360p">360p</option>
+                            <option value="240p">240p</option>
+                            <option value="144p">144p</option>
+                            <!-- Add more options as needed -->
+                        </select><br><br>
+
+                        <label class="input-label" for="videoFormat">Select Video Format(s):</label><br>
+                        <div>
+                            <input type="checkbox" id="mp4" name="videoFormat" value="mp4">
+                            <label for="mp4">MP4</label><br>
+
+                            <input type="checkbox" id="webm" name="videoFormat" value="webm">
+                            <label for="webm">WebM</label><br>
+                        </div><br>
+
+                        <label class="input-label" for="customVideoFormat">Custom Video Format(s) (comma-separated):</label><br>
+                        <input type="text" id="customVideoFormat" name="customVideoFormat" placeholder="Enter Custom Video Formats"><br><br>
+                    </div>
+                </div>
+
+                <button type="button" id="generateCommand">Generate Command</button><br><br>
+            </form>
+        </div>
+    </div>
+
+    <div id="sidebar" style="background-color: #333;">
+        <h2 >Generated Command:</h2>
+        <p id="generatedLink" style="color: #33ff33;"></p>
+        <p id="copyMessage"></p>
+    </div>
+
+    <script>
+      document.getElementById('generateCommand').addEventListener('click', generateCommand);
+
+function generateCommand() {
+    const videoLink = document.getElementById('videoLink').value;
+    let command = `yt-dlp ${videoLink}`;
+
+    const audioOnly = document.getElementById('audioOnly').checked;
+    if (audioOnly) {
+        const audioBitrate = document.getElementById('audioBitrate').value;
+        const selectedAudioFormats = document.querySelectorAll('input[type=checkbox][name*=audioFormat]:checked');
+        let audioFormats = '';
+
+        if (audioBitrate !== '') {
+            command += ` --audio-quality ${audioBitrate}`;
+        }
+
+        if (selectedAudioFormats.length > 0) {
+            audioFormats = Array.from(selectedAudioFormats).map(format => format.value).join(',');
+        }
+
+        if (audioFormats !== '' || audioBitrate !== '') {
+            command += ` --format bestaudio[ext=${audioFormats || 'm4a'}]`;
+        }
+    } else {
+        const audioBitrate = document.getElementById('audioBitrate').value;
+        if (audioBitrate !== '') {
+            command += ` --audio-quality ${audioBitrate}`;
+        }
+
+        const selectedAudioFormats = document.querySelectorAll('input[type=checkbox][name*=audioFormat]:checked');
+        if (selectedAudioFormats.length > 0) {
+            const audioFormatCodes = Array.from(selectedAudioFormats).map(format => format.value).join(',');
+            command += ` --audio-format ${audioFormatCodes}`;
+        }
+
+        const customAudioFormats = document.getElementById('customAudioFormat').value;
+        if (customAudioFormats !== '') {
+            command += ` --audio-format ${customAudioFormats}`;
+        }
+
+        const videoBitrate = document.getElementById('videoBitrate').value;
+        if (videoBitrate !== '') {
+            command += ` --format "bestvideo[height<=${videoBitrate}]+bestaudio/best[height<=${videoBitrate}]"`;
+        }
+
+        const selectedVideoFormats = document.querySelectorAll('input[type=checkbox][name*=videoFormat]:checked');
+        if (selectedVideoFormats.length > 0 && selectedAudioFormats.length === 0) {
+            const videoFormatCodes = Array.from(selectedVideoFormats).map(format => format.value).join(',');
+            command += ` -f bestvideo[ext=${videoFormatCodes}]+bestaudio[ext=mp4]/best[ext=${videoFormatCodes}]`;
+        }
+
+        const customVideoFormats = document.getElementById('customVideoFormat').value;
+        if (customVideoFormats !== '' && selectedAudioFormats.length === 0) {
+            command += ` -f ${customVideoFormats}`;
+        }
+    }
+
+    document.getElementById('generatedLink').innerText = command;
+
+    // Copy command to clipboard
+    const textarea = document.createElement('textarea');
+    textarea.value = command;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    // Display copy message
+    const copyMessage = document.getElementById('copyMessage');
+    copyMessage.innerText = 'Command copied to clipboard!';
+}
+
+    </script>
+</body>
+</html>
